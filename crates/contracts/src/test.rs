@@ -13,6 +13,9 @@ use soroban_sdk::{
     testutils::{Address as _, Events, Ledger},
     Address, Bytes, BytesN, Env, Symbol, Vec,
 };
+use crate::storage::{
+    INSTANCE_TTL_EXTEND_TO, INSTANCE_TTL_THRESHOLD, POOL_TTL_EXTEND_TO, POOL_TTL_THRESHOLD,
+};
 
 use super::{
     errors::ContractError,
@@ -114,6 +117,25 @@ pub(crate) fn deploy_router(env: &Env) -> (Address, Address, StellarRouteClient<
     let client = StellarRouteClient::new(env, &id);
     client.initialize(&admin, &30_u32, &fee_to, &None, &None, &None, &None, &None); // 0.3 % protocol fee
     (admin, fee_to, client)
+}
+
+/// Deploy router and migrate it to 2-of-3 multisig governance.
+/// Returns (signer1, signer2, signer3, admin, client).
+fn deploy_multisig_router(
+    env: &Env,
+) -> (Address, Address, Address, Address, StellarRouteClient<'_>) {
+    let (admin, _fee_to, client) = deploy_router(env);
+    let s1 = Address::generate(env);
+    let s2 = Address::generate(env);
+    let s3 = Address::generate(env);
+
+    let mut signers = Vec::new(env);
+    signers.push_back(s1.clone());
+    signers.push_back(s2.clone());
+    signers.push_back(s3.clone());
+
+    client.migrate_to_multisig(&admin, &signers, &2_u32, &10_000_u64, &None);
+    (s1, s2, s3, admin, client)
 }
 
 pub(crate) fn deploy_mock_pool(env: &Env) -> Address {
@@ -1893,7 +1915,7 @@ fn test_manual_fee_distribution_with_dust() {
         auto_distribute: false,
     });
 
-    // 1M -> 990K pool_out -> 30 bps fee = 297 fee
+    // 1M -> 990K pool_out -> 30 bps fee = 2970 fee
     client.execute_swap(
         &Address::generate(&env),
         &swap_params_for(
@@ -1906,7 +1928,7 @@ fn test_manual_fee_distribution_with_dust() {
     );
 
     let fee_balance = client.get_fee_balance(&Asset::Native);
-    assert_eq!(fee_balance, 297);
+    assert_eq!(fee_balance, 2970);
 
     client.distribute_fees(&Asset::Native);
 
@@ -1916,7 +1938,7 @@ fn test_manual_fee_distribution_with_dust() {
     // Validate history metric
     let history = client.get_distribution_history(&Asset::Native);
     assert_eq!(history.len(), 1);
-    assert_eq!(history.get(0).unwrap().total_distributed, 297);
+    assert_eq!(history.get(0).unwrap().total_distributed, 2970);
 }
 
 #[test]
@@ -1948,7 +1970,7 @@ fn test_auto_distribution_triggers() {
     assert_eq!(client.get_fee_balance(&Asset::Native), 2);
     assert_eq!(client.get_distribution_history(&Asset::Native).len(), 0);
 
-    // Swap that generates 297 fee (crosses the threshold of 100)
+    // Swap that generates 2970 fee (crosses the threshold of 100)
     client.execute_swap(
         &Address::generate(&env),
         &swap_params_for(
@@ -1963,14 +1985,14 @@ fn test_auto_distribution_triggers() {
     // Balance should be 0 because it automatically distributed
     assert_eq!(client.get_fee_balance(&Asset::Native), 0);
     assert_eq!(client.get_distribution_history(&Asset::Native).len(), 1);
-    // Both 2 and 297 are distributed together
+    // Both 2 and 2970 are distributed together
     assert_eq!(
         client
             .get_distribution_history(&Asset::Native)
             .get(0)
             .unwrap()
             .total_distributed,
-        299
+        2972
     );
 }
 
@@ -2006,5 +2028,5 @@ fn test_burn_recipient_tracking() {
     );
     client.distribute_fees(&Asset::Native);
 
-    assert_eq!(client.get_total_fees_burned(&Asset::Native), 297);
+    assert_eq!(client.get_total_fees_burned(&Asset::Native), 2970);
 }

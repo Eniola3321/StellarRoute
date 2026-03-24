@@ -16,7 +16,7 @@ fn bench_initialize() {
     let client = StellarRouteClient::new(&env, &contract_id);
 
     // Benchmark initialize
-    client.initialize(&admin, &30, &fee_to);
+    client.initialize(&admin, &30, &fee_to, &None, &None, &None, &None, &None);
 
     // Assert: Should complete without exceeding budget
     assert!(env.budget().cpu_instruction_cost() < 10_000_000);
@@ -25,7 +25,7 @@ fn bench_initialize() {
 #[test]
 fn bench_register_pool() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
 
     env.mock_all_auths();
@@ -40,7 +40,7 @@ fn bench_register_pool() {
 #[test]
 fn bench_get_quote_1_hop() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
 
     env.mock_all_auths();
@@ -58,7 +58,7 @@ fn bench_get_quote_1_hop() {
 #[test]
 fn bench_get_quote_2_hops() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
 
     env.mock_all_auths();
@@ -76,7 +76,7 @@ fn bench_get_quote_2_hops() {
 #[test]
 fn bench_get_quote_4_hops() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
 
     env.mock_all_auths();
@@ -94,7 +94,7 @@ fn bench_get_quote_4_hops() {
 #[test]
 fn bench_execute_swap_1_hop() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
     let sender = Address::generate(&env);
 
@@ -108,6 +108,9 @@ fn bench_execute_swap_1_hop() {
         min_amount_out: 900_000,
         recipient: sender.clone(),
         deadline: 1000,
+        not_before: 0,
+        max_price_impact_bps: 0,
+        max_execution_spread_bps: 0,
     };
 
     // Benchmark execute_swap with 1 hop
@@ -120,7 +123,7 @@ fn bench_execute_swap_1_hop() {
 #[test]
 fn bench_execute_swap_4_hops() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
     let sender = Address::generate(&env);
 
@@ -134,6 +137,9 @@ fn bench_execute_swap_4_hops() {
         min_amount_out: 800_000,
         recipient: sender.clone(),
         deadline: 1000,
+        not_before: 0,
+        max_price_impact_bps: 0,
+        max_execution_spread_bps: 0,
     };
 
     // Benchmark execute_swap with 4 hops
@@ -165,7 +171,7 @@ fn bench_estimate_resources() {
 #[test]
 fn stress_test_max_complexity() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
     let sender = Address::generate(&env);
 
@@ -180,6 +186,9 @@ fn stress_test_max_complexity() {
         min_amount_out: 1,
         recipient: sender.clone(),
         deadline: 10000,
+        not_before: 0,
+        max_price_impact_bps: 0,
+        max_execution_spread_bps: 0,
     };
 
     let result = client.try_execute_swap(&sender, &params);
@@ -194,7 +203,7 @@ fn stress_test_max_complexity() {
 #[test]
 fn regression_test_gas_increase() {
     let env = setup_env();
-    let (admin, _, client) = deploy_router(&env);
+    let (_admin, _, client) = deploy_router(&env);
     let pool = deploy_mock_pool(&env);
 
     env.mock_all_auths();
