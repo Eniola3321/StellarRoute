@@ -249,8 +249,7 @@ impl MultiRegionRouter {
         Err(ApiError::Internal(Arc::new(anyhow::anyhow!(
             "All regions exhausted: {}",
             last_error.unwrap_or_else(|| "Unknown error".to_string())
-        )))
-        .into())
+        ))))
     }
 
     /// Get routing metrics
