@@ -25,8 +25,8 @@ pub enum ApiError {
     #[error("Database error: {0}")]
     Database(Arc<sqlx::Error>),
 
-    #[error("Validation error: {0}")]
-    Validation(String),
+    #[error("Validation error: {code} - {message}")]
+    Validation { code: String, message: String },
 
     #[error("Rate limit exceeded")]
     RateLimitExceeded,
@@ -68,25 +68,25 @@ pub type Result<T> = std::result::Result<T, ApiError>;
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let (status, code, message) = match self {
-            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, ApiErrorCode::BadRequest, msg),
-            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, ApiErrorCode::NotFound, msg),
-            ApiError::Validation(msg) => (
-                StatusCode::BAD_REQUEST,
-                ApiErrorCode::ValidationError,
-                msg,
-            ),
+        let (status, error_type, message) = match self {
+            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "bad_request".to_string(), msg),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, "not_found".to_string(), msg),
+            ApiError::Validation { code, message } => (StatusCode::BAD_REQUEST, code, message),
             ApiError::RateLimitExceeded => (
                 StatusCode::TOO_MANY_REQUESTS,
-                ApiErrorCode::RateLimitExceeded,
+                "rate_limit_exceeded".to_string(),
                 "Too many requests. Please try again later.".to_string(),
             ),
-            ApiError::Overloaded(msg) => (StatusCode::SERVICE_UNAVAILABLE, ApiErrorCode::Overloaded, msg),
-            ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, ApiErrorCode::Unauthorized, msg),
-            ApiError::InvalidAsset(msg) => (StatusCode::BAD_REQUEST, ApiErrorCode::InvalidAsset, msg),
+            ApiError::Overloaded(msg) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "overloaded".to_string(),
+                msg,
+            ),
+            ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, "unauthorized".to_string(), msg),
+            ApiError::InvalidAsset(msg) => (StatusCode::BAD_REQUEST, "invalid_asset".to_string(), msg),
             ApiError::NoRouteFound => (
                 StatusCode::NOT_FOUND,
-                ApiErrorCode::NoRoute,
+                "no_route".to_string(),
                 "No trading route found for this pair".to_string(),
             ),
             ApiError::StaleMarketData {
@@ -109,7 +109,7 @@ impl IntoResponse for ApiError {
             }
             ApiError::Database(_) | ApiError::Internal(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                ApiErrorCode::InternalError,
+                "internal_error".to_string(),
                 "An internal error occurred".to_string(),
             ),
         };
