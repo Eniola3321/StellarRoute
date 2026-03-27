@@ -182,6 +182,37 @@ pub struct RouteResponse {
     pub timestamp: i64,
 }
 
+/// A comprehensive set of multiple ranked execution routes
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RoutesResponse {
+    pub base_asset: AssetInfo,
+    pub quote_asset: AssetInfo,
+    pub amount: String,
+    pub routes: Vec<RouteCandidate>,
+    pub timestamp: i64,
+}
+
+/// A single proposed N-hop route with pricing metrics
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RouteCandidate {
+    pub estimated_output: String,
+    pub impact_bps: u32,
+    pub score: f64,
+    pub policy_used: String,
+    pub path: Vec<RouteHop>,
+}
+
+/// A specific swap execution step inside a RouteCandidate
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RouteHop {
+    pub from_asset: AssetInfo,
+    pub to_asset: AssetInfo,
+    pub price: String,
+    pub amount_out_of_hop: String,
+    pub fee_bps: u32,
+    pub source: String,
+}
+
 /// Configuration for quote staleness detection
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct QuoteStalenessConfig {

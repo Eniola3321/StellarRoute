@@ -21,6 +21,34 @@ pub struct QuoteParams {
     pub explain: Option<bool>,
 }
 
+/// Query parameters for the multiple-routes endpoint
+#[derive(Debug, Deserialize)]
+pub struct RoutesParams {
+    pub amount: Option<String>,
+    pub limit: Option<usize>,
+    pub max_hops: Option<usize>,
+    pub environment: Option<String>,
+}
+
+impl QuoteParams {
+    /// Get the slippage tolerance in basis points, applying default if omitted
+    pub fn slippage_bps(&self) -> u32 {
+        self.slippage_bps.unwrap_or(DEFAULT_SLIPPAGE_BPS)
+    }
+
+    /// Validate the slippage tolerance bounds
+    pub fn validate_slippage(&self) -> std::result::Result<(), String> {
+        let bps = self.slippage_bps();
+        if bps > MAX_SLIPPAGE_BPS {
+            return Err(format!(
+                "slippage_bps must be between 0 and {} (100%)",
+                MAX_SLIPPAGE_BPS
+            ));
+        }
+        Ok(())
+    }
+}
+
 fn default_quote_type() -> QuoteType {
     QuoteType::Sell
 }
@@ -36,7 +64,7 @@ pub enum QuoteType {
 }
 
 /// Asset identifier in path parameters
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct AssetPath {
     /// Asset code (e.g., "XLM", "USDC", or "native" for XLM)
     pub asset_code: String,
