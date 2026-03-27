@@ -1,12 +1,19 @@
 "use client";
 
+import { QuoteSummarySkeleton } from "./QuoteSummarySkeleton";
+
 interface QuoteSummaryProps {
   rate: string;
   fee: string;
   priceImpact: string;
+  isLoading?: boolean;
 }
 
-export function QuoteSummary({ rate, fee, priceImpact }: QuoteSummaryProps) {
+export function QuoteSummary({ rate, fee, priceImpact, isLoading = false }: QuoteSummaryProps) {
+  if (isLoading) {
+    return <QuoteSummarySkeleton />;
+  }
+
   return (
     <div className="rounded-xl border border-border/50 p-4 space-y-3 bg-muted/30">
       <div className="flex justify-between items-center text-sm">

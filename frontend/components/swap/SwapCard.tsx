@@ -11,7 +11,7 @@ import { SwapCTA } from './SwapCTA';
 import { SimulationPanel } from './SimulationPanel';
 import { FeeBreakdownPanel } from './FeeBreakdownPanel';
 import { useTradeFormStorage } from '@/hooks/useTradeFormStorage';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export function SwapCard() {
   const {
@@ -27,16 +27,32 @@ export function SwapCard() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [confidenceScore, setConfidenceScore] = useState<number>(85);
   const [volatility, setVolatility] = useState<'high' | 'medium' | 'low'>('low');
+  const loadingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Derived state for the button
   const isValidAmount = parseFloat(payAmount) > 0;
 
   // Simulate quote fetching with confidence and volatility
+  // Minimum 300ms delay before hiding skeleton to prevent flicker on fast responses
   const handlePayAmountChange = (amount: string) => {
     setPayAmount(amount);
     if (parseFloat(amount) > 0) {
       setIsLoading(true);
-      setTimeout(() => {
+
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+
+      loadingTimeoutRef.current = setTimeout(() => {
         const amountNum = parseFloat(amount);
         setReceiveAmount((amountNum * 0.98).toFixed(4));
         // Simulate varying confidence based on amount
@@ -51,11 +67,16 @@ export function SwapCard() {
           setVolatility('low');
         }
         setIsLoading(false);
-      }, 500);
+      }, 500); // Minimum 500ms total (300ms min + 200ms delay) guarantees skeleton shows
     } else {
       setReceiveAmount('');
       setConfidenceScore(85);
       setVolatility('low');
+      setIsLoading(false);
+
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
     }
   };
 
@@ -104,7 +125,7 @@ export function SwapCard() {
           onPayAmountChange={handlePayAmountChange}
           receiveAmount={receiveAmount}
         />
-        {isValidAmount && !isLoading && receiveAmount && (
+        {isValidAmount && (
           <>
             <SimulationPanel
               payAmount={payAmount}
@@ -122,13 +143,19 @@ export function SwapCard() {
                 { name: 'Operation Fee', amount: '0.00002 XLM', description: 'Fee for path payment operations' },
               ]}
               totalFee="0.01 XLM"
-              netOutput={`${(parseFloat(receiveAmount) * 0.99).toFixed(4)} USDC`}
+              netOutput={`${(parseFloat(receiveAmount || '0') * 0.99).toFixed(4)} USDC`}
             />
-            <QuoteSummary rate="1 XLM ≈ 0.98 USDC" fee="0.01 XLM" priceImpact="< 0.1%" />
+            <QuoteSummary 
+              rate="1 XLM ≈ 0.98 USDC" 
+              fee="0.01 XLM" 
+              priceImpact="< 0.1%" 
+              isLoading={isLoading}
+            />
             <RouteDisplay
               amountOut={receiveAmount}
               confidenceScore={confidenceScore}
               volatility={volatility}
+              isLoading={isLoading}
             />
           </>
         )}
