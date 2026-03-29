@@ -16,8 +16,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { STELLAR_NATIVE_MAX_DECIMALS } from '@/lib/amount-input';
 import { SwapValidationSchema } from '@/lib/swap-validation';
+import { useSwapI18n } from '@/lib/swap-i18n';
 
 export function SwapCard() {
+  const { t } = useSwapI18n();
   const {
     amount: payAmount,
     setAmount: setPayAmount,
@@ -67,7 +69,7 @@ export function SwapCard() {
 
     if (!isOnline) {
       setIsLoading(false);
-      setQuoteError('You are offline. Reconnect to refresh quote.');
+      setQuoteError(t('swap.card.offlineQuoteError'));
       setReceiveAmount('');
       return;
     }
@@ -88,7 +90,7 @@ export function SwapCard() {
       }
       setIsLoading(false);
     }, 500);
-  }, [clearQuoteTimer, isOnline]);
+  }, [clearQuoteTimer, isOnline, t]);
 
   const handlePayAmountChange = (amount: string) => {
     setPayAmount(amount);
@@ -105,7 +107,7 @@ export function SwapCard() {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional UI transition for offline mode
       setIsLoading(false);
       if (parseFloat(payAmount) > 0) {
-        setQuoteError('You are offline. Reconnect to refresh quote.');
+        setQuoteError(t('swap.card.offlineQuoteError'));
       }
       return;
     }
@@ -114,7 +116,7 @@ export function SwapCard() {
     if (quoteError && parseFloat(payAmount) > 0) {
       requestQuote(payAmount);
     }
-  }, [isOnline, payAmount, quoteError, clearQuoteTimer, requestQuote]);
+  }, [isOnline, payAmount, quoteError, clearQuoteTimer, requestQuote, t]);
 
   useEffect(() => {
     return () => {
@@ -137,7 +139,7 @@ export function SwapCard() {
     return (
       <Card className="w-full border shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Swap</CardTitle>
+          <CardTitle className="text-xl font-semibold">{t('swap.card.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-32 animate-pulse rounded-lg bg-muted" />
@@ -151,22 +153,21 @@ export function SwapCard() {
       <CardHeader className="pb-4">
         {isOffline && (
           <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            You&apos;re offline. Quote refresh and swap submission are paused until
-            your connection is restored.
+            {t('swap.card.offlineBanner')}
           </div>
         )}
         <div className="flex items-center justify-between flex-row">
-          <CardTitle className="text-xl font-semibold">Swap</CardTitle>
+          <CardTitle className="text-xl font-semibold">{t('swap.card.title')}</CardTitle>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
               className="h-11 w-11 rounded-full"
               onClick={handleReset}
-              title="Clear form"
+              title={t('swap.card.clearForm')}
             >
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
-              <span className="sr-only">Clear form</span>
+              <span className="sr-only">{t('swap.card.clearForm')}</span>
             </Button>
             <SlippageControl slippage={slippage} onChange={setSlippage} />
           </div>
@@ -188,12 +189,28 @@ export function SwapCard() {
             />
             <FeeBreakdownPanel
               protocolFees={[
-                { name: 'Router Fee', amount: '0.001 XLM', description: 'Fee for using StellarRoute aggregator' },
-                { name: 'Pool Fee', amount: '0.003%', description: 'Liquidity provider fee for AQUA pool' },
+                {
+                  name: t('swap.fees.routerFee.name'),
+                  amount: '0.001 XLM',
+                  description: t('swap.fees.routerFee.description'),
+                },
+                {
+                  name: t('swap.fees.poolFee.name'),
+                  amount: '0.003%',
+                  description: t('swap.fees.poolFee.description'),
+                },
               ]}
               networkCosts={[
-                { name: 'Base Fee', amount: '0.00001 XLM', description: 'Stellar network base transaction fee' },
-                { name: 'Operation Fee', amount: '0.00002 XLM', description: 'Fee for path payment operations' },
+                {
+                  name: t('swap.fees.baseFee.name'),
+                  amount: '0.00001 XLM',
+                  description: t('swap.fees.baseFee.description'),
+                },
+                {
+                  name: t('swap.fees.operationFee.name'),
+                  amount: '0.00002 XLM',
+                  description: t('swap.fees.operationFee.description'),
+                },
               ]}
               totalFee="0.01 XLM"
               netOutput={`${(parseFloat(receiveAmount || '0') * 0.99).toFixed(4)} USDC`}
@@ -210,7 +227,7 @@ export function SwapCard() {
               volatility={volatility}
               isLoading={isLoading}
             />
-          </>
+          </div>
         )}
         {quoteError && isValidAmount && (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -223,7 +240,7 @@ export function SwapCard() {
               onClick={handleRetryQuote}
               disabled={!isOnline || isLoading}
             >
-              Retry quote
+              {t('swap.card.retryQuote')}
             </Button>
           </div>
         )}

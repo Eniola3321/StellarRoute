@@ -109,6 +109,27 @@ Run tests with:
 npm test TokenPairSelector
 ```
 
+## i18n Scaffold
+
+Swap copy now flows through `frontend/lib/swap-i18n.ts` so the core swap UI can translate user-visible strings without introducing a heavyweight runtime.
+
+- `en-US` is the default and fallback locale for swap copy
+- `zh-CN` is included as the first translated locale to prove the wiring end-to-end
+- other supported locales currently fall back to `en-US` until dedicated copy is added
+
+### Adding or Updating Strings
+
+1. Add or update the key in the `SwapTranslationKey` union.
+2. Fill in the English copy inside the `en-US` dictionary.
+3. Add translated copy for any locale you want to support immediately.
+4. Use `useSwapI18n().t("your.key")` inside swap components instead of inline text.
+
+### Focused Verification
+
+```bash
+npm test -- lib/swap-i18n.test.ts components/swap/SimulationPanel.test.tsx components/swap/SwapCard.test.tsx components/swap/RouteDisplay.test.tsx
+```
+
 ## Design Decisions
 
 1. **Two-Step Selection**: Users select base first, then quote. This ensures only valid pairs can be selected.
