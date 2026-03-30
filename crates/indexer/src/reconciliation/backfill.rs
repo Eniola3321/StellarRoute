@@ -4,16 +4,16 @@
 //! historical records from `sdex_offers` and `amm_pool_reserves` into the optimized
 //! `normalized_liquidity` storage table.
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use sqlx::{PgPool, Row, FromRow};
-use tracing::{info, warn, error};
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, Row, FromRow};
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tracing::{info, warn, error};
 
-use crate::error::{Result, IndexerError};
+use crate::error::Result;
 
 const JOB_ID: &str = "historical_liquidity_normalization";
 

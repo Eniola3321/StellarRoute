@@ -36,16 +36,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Sync with next-themes theme
-useEffect(() => {
-  if (!theme) return;
-
-  setSettings((prev) => {
-    if (prev.theme === theme) return prev;
-    return { ...prev, theme: theme as ThemeSetting };
-  });
-}, [theme]);
-
   // Handle local storage saving
   useEffect(() => {
     try {
@@ -101,8 +91,4 @@ export function useSettings() {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
-}
-
-export function useOptionalSettings() {
-  return useContext(SettingsContext);
 }
